@@ -1,66 +1,42 @@
-import React, { useState } from 'react';
+// App.jsx
+import React, { useState, useEffect } from "react";
+import WordSearch from "./components/WordSearch";
+import FlashcardList from "./components/FlashcardList";
+import Quiz from "./components/Quiz";
 
-function App() {
-  const [word, setWord] = useState('');
-  const [definition, setDefinition] = useState('');
-  const [translation, setTranslation] = useState('');
+export default function App() {
+  const [flashcards, setFlashcards] = useState([]);
+  const [quizWords, setQuizWords] = useState([]);
 
-  const handleSearch = async () => {
-    // 英文释义
-    try {
-      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-      const data = await res.json();
-      const meaning = data[0]?.meanings[0]?.definitions[0]?.definition || 'No definition found';
-      setDefinition(meaning);
-    } catch (error) {
-      setDefinition('Error fetching definition.');
-    }
+  const addToFlashcards = (word) => {
+    setFlashcards((prev) => {
+      if (!prev.find((w) => w.word === word.word)) {
+        return [...prev, word];
+      }
+      return prev;
+    });
+  };
 
-    // 中文翻译
-    try {
-      const res = await fetch('https://libretranslate.de/translate', {
-        method: 'POST',
-        body: JSON.stringify({
-          q: word,
-          source: 'en',
-          target: 'zh',
-          format: 'text',
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await res.json();
-      setTranslation(data.translatedText);
-    } catch (error) {
-      setTranslation('Error fetching translation.');
-    }
+  const startQuiz = () => {
+    const shuffled = [...flashcards].sort(() => 0.5 - Math.random());
+    setQuizWords(shuffled.slice(0, 5));
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
-      <h1>单词查询系统</h1>
-      <input
-        type="text"
-        value={word}
-        onChange={(e) => setWord(e.target.value)}
-        placeholder="输入英文单词"
-      />
-      <button onClick={handleSearch}>查询</button>
-
-      {definition && (
-        <div>
-          <h2>英文解释：</h2>
-          <p>{definition}</p>
-        </div>
-      )}
-
-      {translation && (
-        <div>
-          <h2>中文翻译：</h2>
-          <p>{translation}</p>
-        </div>
-      )}
+    <div className="min-h-screen bg-gray-50 p-4">
+      <h1 className="text-2xl font-bold mb-4">英语学习助手</h1>
+      <WordSearch onAdd={addToFlashcards} />
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-2">我的生词卡</h2>
+        <FlashcardList flashcards={flashcards} />
+      </div>
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-2">词汇测验</h2>
+        <button onClick={startQuiz} className="bg-blue-500 text-white px-4 py-2 rounded">
+          开始测验
+        </button>
+        <Quiz quizWords={quizWords} />
+      </div>
     </div>
   );
 }
-
-export default App;
